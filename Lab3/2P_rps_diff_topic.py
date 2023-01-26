@@ -10,7 +10,7 @@ RPS_RESULT = 8
 # callback definitions
 def on_connect(client, userdata, flags, rc):
     print("Connection returned result: " + str(rc))
-    client.subscribe("ece180/test", qos=1)
+    client.subscribe("ece180/test/player"+str(player_num), qos=1)
 
 def on_disconnect(client, userdata, rc):
     if rc != 0:
@@ -26,9 +26,8 @@ def on_message(client, userdata, message):
             message.topic + '" with QoS ' + str(message.qos))
 
         my_input = input('Choose r, p, or s, for Rock, Paper, or Scissors\n')
-        my_input = str(player_num) + ' ' + my_input
        
-        client.publish("ece180/test", my_input, qos=1)
+        client.publish("ece180/test/player"+str(player_num), my_input, qos=1)
         print('Published message: ', my_input)
 
         time.sleep(2)
