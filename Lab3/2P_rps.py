@@ -4,13 +4,13 @@ import time
 # used code that the professor/TA posted, modified to be a player in rps
 player_num = 2
 counter = 1
-ROUND_START = 9
-RPS_RESULT = 8
+ROUND_START = 8
+RPS_RESULT = 0
 
 # callback definitions
 def on_connect(client, userdata, flags, rc):
     print("Connection returned result: " + str(rc))
-    client.subscribe("ece180/test", qos=1)
+    client.subscribe("ece180/team1/rps", qos=1)
 
 def on_disconnect(client, userdata, rc):
     if rc != 0:
@@ -21,20 +21,21 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, message):
     global counter
 
-    if(int(message.payload) == ROUND_START):
-        print('Received message: "' + str(message.payload) + '" on topic "' +
+    print('Received message: "' + str(message.payload) + '" on topic "' +
             message.topic + '" with QoS ' + str(message.qos))
+    print('\n')
+    split_msg = str(message.payload).split()
 
+    if (split_msg[0] == ROUND_START):
         my_input = input('Choose r, p, or s, for Rock, Paper, or Scissors\n')
-        my_input = str(player_num) + ' ' + my_input
+        my_input = str(player_num) + my_input
        
-        client.publish("ece180/test", my_input, qos=1)
+        client.publish("ece180/team1/rps", my_input, qos=1)
         print('Published message: ', my_input)
 
         time.sleep(2)
-    elif(int(message.payload) == RPS_RESULT):
-        print('Received message: "' + str(message.payload) + '" on topic "' +
-            message.topic + '" with QoS ' + str(message.qos))
+    elif(split_msg[0] == RPS_RESULT):
+        print("Result: ", split_msg[player_num])
         time.sleep(2)
 
 # 1. create a client instance.
