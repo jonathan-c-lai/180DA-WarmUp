@@ -1,11 +1,15 @@
 import paho.mqtt.client as mqtt
 import time
 
-# used code that the professor/TA posted, modified to be a player in rps
+# used code that the professor/TA posted, modified to be a player in rps game communicating with a central server
+# we have our own protocol where our player number would be appended
+# to the beginning of our rock/paper/scissors message so the server can tell us
+# individually who won and who lost
+
 player_num = 2
 counter = 1
-ROUND_START = 8
-RPS_RESULT = 0
+ROUND_START = "b'8"
+RPS_RESULT = "b'0"
 
 # callback definitions
 def on_connect(client, userdata, flags, rc):
@@ -21,8 +25,8 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, message):
     global counter
 
-    print('Received message: "' + str(message.payload) + '" on topic "' +
-            message.topic + '" with QoS ' + str(message.qos))
+    #print('Received message: "' + str(message.payload) + '" on topic "' +
+    #        message.topic + '" with QoS ' + str(message.qos))
     print('\n')
     split_msg = str(message.payload).split()
 
@@ -35,7 +39,11 @@ def on_message(client, userdata, message):
 
         time.sleep(2)
     elif(split_msg[0] == RPS_RESULT):
-        print("Result: ", split_msg[player_num])
+        if(split_msg[1] == "Waiting"):
+            print("Result: ", split_msg[1])
+        else:
+            print("Result: ", split_msg[player_num])
+        
         time.sleep(2)
 
 # 1. create a client instance.
