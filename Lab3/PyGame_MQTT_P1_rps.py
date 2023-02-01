@@ -6,11 +6,59 @@
 # used code here to learn how to use in-game time https://stackoverflow.com/questions/18839039/how-to-wait-some-time-in-pygame
 import paho.mqtt.client as mqtt
 import pygame
-import random
 from pygame.locals import (
     RLEACCEL
 )
 
+# MQTT
+player = 1
+# flags
+player1_received = False
+player2_received = False
+# player's moves
+player1_move = 0
+player2_move = 0
+
+# game player 1
+# for MQTT:
+# both subscribe to same thing 
+# start in select mode; upon clicking one of the options go into waiting
+    # (should display waiting at the bottom)
+# then if the other person also selected, reset both flags back to normal
+    # and display result
+# then after 3 seconds go back to select
+
+# callback definitions
+def on_connect(client, userdata, flags, rc):
+    print("Connection returned result: " + str(rc))
+    client.subscribe("ece180/team1/rps_pygame", qos=1)
+
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print('Unexpected Disconnect')
+    else:
+        print('Expected Disconnect')
+# The default message callback.
+def on_message(client, userdata, message):
+    global counter
+    global player1_received
+    global player2_received
+    global player1_move
+    global player2_move
+
+    #print('Received message: "' + str(message.payload) + '" on topic "' +
+    #        message.topic + '" with QoS ' + str(message.qos))
+    print('\n')
+    split_msg = str(message.payload)
+
+    if (split_msg[2] == str(1)):
+        player1_received = True
+        player1_move = split_msg[3]
+
+    elif(split_msg[2] == str(2)):
+        player2_received = True
+        player2_move = split_msg[3]
+        
 # RPS game logic from my own rps_cli game
 # 1 is Rock
 # 2 is Paper
@@ -35,7 +83,7 @@ def rps_result(p1, p2):
     if (p1 == p2):
         return 'Tie'
     elif ((p1 == ROCK and p2 == PAPER) or (p1 == PAPER and p2 == SCISSORS) or (p1 == SCISSORS and p2 == ROCK)):
-        return 'CPU Wins'
+        return 'Opponent Wins'
     elif ((p1 == ROCK and p2 == SCISSORS) or (p1 == PAPER and p2 == ROCK) or (p1 == SCISSORS and p2 == PAPER)):
         return 'You Win!'
 
@@ -94,7 +142,7 @@ all_sprites.add(scissors)
 
 # set up font for displaying results and instructions
 font = pygame.font.Font('fonts/arial.ttf', 48)
-large_font = pygame.font.Font('fonts/arial.ttf', 48)
+large_font = pygame.font.Font('fonts/arial.ttf', 45)
 text = font.render('Select Your Option', True, (140, 150, 100), (255,255,255))
 textRect = text.get_rect()
 textRect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/5)
@@ -115,6 +163,21 @@ go_back_to_options_tick = 3000
 # score to keep track score
 score = 0
 
+# 1. create a client instance.
+client = mqtt.Client()
+# add additional client options (security, certifications, etc.)
+# add callbacks to client.
+client.on_connect = on_connect
+client.on_disconnect = on_disconnect
+client.on_message = on_message
+# 2. connect to a broker using one of the connect*() functions.
+# client.connect_async("test.mosquitto.org")
+client.connect_async('mqtt.eclipseprojects.io')
+# client.connect("test.mosquitto.org", 1883, 60)
+# client.connect("mqtt.eclipse.org")
+# 3. call one of the loop*() functions to maintain network traffic flow with the broker.
+client.loop_start()
+
 while running:
     # check for event that user close game or click on sprite
     for event in pygame.event.get():
@@ -130,33 +193,47 @@ while running:
             elif scissors.rect.collidepoint(pos):
                 user_input = SCISSORS
             
-            CPU_input = str(random.randint(1,3))
-
-            # update text on the screen
-            text = font.render('You picked ' + convert(user_input), True, (140, 150, 100), (255,255,255))
-            cpu_text = large_font.render('CPU picked ' + convert(CPU_input) + ' ... ' + rps_result(user_input,CPU_input), True, (140, 150, 100), (255,255,255))
-            cpu_textRect = cpu_text.get_rect()
-            cpu_textRect.center = (SCREEN_WIDTH/2, (4*SCREEN_HEIGHT)/5)
-
-            print('\n\n')
-            print("You picked ", convert(user_input), ' and the CPU picked ', convert(CPU_input))
-            print('Result: ', rps_result(user_input,CPU_input))
-
-            if (rps_result(user_input,CPU_input) == "You Win!"):
-                score += 1
-
-            score_text = font.render('Score: ' + str(score), True, (140, 150, 100), (255,255,255))
-
-            last_time = pygame.time.get_ticks()
+            client.publish("ece180/team1/rps_pygame", str(player)+str(user_input), qos=1)
+            print('Published message: ', str(player)+str(user_input))
 
         if event.type == pygame.QUIT:
             running = False
+
+    # if both players made selection, then set time before returning to selection
+    # also reset selection
+    # also print result
+    if (player1_received and player2_received):
+        player1_received = False
+        player2_received = False
+
+        last_time = pygame.time.get_ticks()
+
+        # update text on the screen
+        text = font.render('You picked ' + convert(user_input), True, (140, 150, 100), (255,255,255))
+        cpu_text = large_font.render('They picked ' + convert(player2_move) + ' ... ' + rps_result(user_input,player2_move), True, (140, 150, 100), (255,255,255))
+        cpu_textRect = cpu_text.get_rect()
+        cpu_textRect.center = (SCREEN_WIDTH/2, (4*SCREEN_HEIGHT)/5)
+
+        print('\n\n')
+        print("You picked ", convert(user_input), ' and the they picked ', convert(player2_move))
+        print('Result: ', rps_result(user_input,player2_move))
+
+        if (rps_result(user_input,player2_move) == "You Win!"):
+            score += 1
+
+        score_text = font.render('Score: ' + str(score), True, (140, 150, 100), (255,255,255))
+    elif (player1_received and not player2_received):
+        text = font.render('You picked ' + convert(user_input), True, (140, 150, 100), (255,255,255))
+        cpu_text = large_font.render('Waiting for opponent ... ', True, (140, 150, 100), (255,255,255))
+        cpu_textRect = cpu_text.get_rect()
+        cpu_textRect.center = (SCREEN_WIDTH/2, (4*SCREEN_HEIGHT)/5)
 
     # if enough time passed, change text to prompt user again
     if (pygame.time.get_ticks() - last_time > go_back_to_options_tick):
         text = font.render('Select Your Option', True, (140, 150, 100), (255,255,255))
         cpu_text = large_font.render(' ', True, (140, 150, 100), (255,255,255))
         cpu_textRect = cpu_text.get_rect()
+    
 
     # fill the background with white
     screen.fill((255, 255, 255))
