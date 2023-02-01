@@ -4,6 +4,13 @@
 # used code here to learn how to sprite click detection https://stackoverflow.com/questions/10990137/pygame-mouse-clicking-detection
 # used code here to learn how to display text https://www.geeksforgeeks.org/python-display-text-to-pygame-window/
 # used code here to learn how to use in-game time https://stackoverflow.com/questions/18839039/how-to-wait-some-time-in-pygame
+# used code that the professor/TA posted for MQTT, modified completely to have it work for RPS game and sending message on decision that each player picked
+
+# These resources above were used to create RPS game that works for 2P remotely using MQTT,
+# the two players can just pick their choice of RPS by clicking a sprite on the screen and then their
+# selection gets transmitted by MQTT, the players then receive the msg that opponent broadcasts
+# and locally computes the result of winner / score counter (no central server)
+
 import paho.mqtt.client as mqtt
 import pygame
 from pygame.locals import (
@@ -149,7 +156,7 @@ textRect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/5)
 cpu_text = large_font.render(' ', True, (140, 150, 100), (255,255,255))
 cpu_textRect = cpu_text.get_rect()
 cpu_textRect.center = (SCREEN_WIDTH/2, (4*SCREEN_HEIGHT)/5)
-score_text = font.render('Score: 0', True, (140, 150, 100), (255,255,255))
+score_text = font.render('P2 Score: 0', True, (140, 150, 100), (255,255,255))
 score_textRect = score_text.get_rect()
 score_textRect.topleft = (20, 20)
 
@@ -221,8 +228,8 @@ while running:
         if (rps_result(user_input,player1_move) == "You Win!"):
             score += 1
 
-        score_text = font.render('Score: ' + str(score), True, (140, 150, 100), (255,255,255))
-    elif (player2_received and not player1_received):
+        score_text = font.render('P2 Score: ' + str(score), True, (140, 150, 100), (255,255,255))
+    elif (player2_received):
         text = font.render('You picked ' + convert(user_input), True, (140, 150, 100), (255,255,255))
         cpu_text = large_font.render('Waiting for opponent ... ', True, (140, 150, 100), (255,255,255))
         cpu_textRect = cpu_text.get_rect()
