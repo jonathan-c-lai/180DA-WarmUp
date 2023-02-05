@@ -1,10 +1,30 @@
 import paho.mqtt.client as mqtt
+import time
 
 # used code that the professor/TA posted
 # modified to read in IMU data and then classify whether or not
-# the device is idle
+# the IMU is idle
 
-# TODO: READ IN DATA FROM IMU AND DECIDE IF IDLE OR NOT MAYBE DECISION TREE
+
+# paramater for if sum of gyroscope value's differences with respect to 
+# prev value is larger than this, then considered NOT idle
+GYRO_ACTIVE_DIFF = 50 
+# how much time to rest until check idle again in ms
+ACTIVE_TIME = 100
+ACTIVE = True
+
+accel = [0, 0, 0]
+gyro = [0, 0, 0]
+
+def classify_idle(old_gx, old_gy, old_gz, new_gx, new_gy, new_gz):
+    global ACTIVE
+
+    # if difference in gyroscope values greater than GYRO_ACTIVE_DIFF then print active
+    if (((abs(old_gx - new_gx) + abs(old_gy - new_gy) + abs(old_gz - new_gz))) > GYRO_ACTIVE_DIFF) or ACTIVE:
+        ACTIVE = True
+        print("Status: ACTIVE")
+    else:
+        print("Status: IDLE")
 
 # callback definitions
 def on_connect(client, userdata, flags, rc):
@@ -18,8 +38,32 @@ def on_disconnect(client, userdata, rc):
         print('Expected Disconnect')
 # The default message callback.
 def on_message(client, userdata, message):
-    print('Received message: "' + str(message.payload))
+    global accel
+    global gyro
+
+    received_msg = str(message.payload)
+    # print('Received message: "' + received_msg)
+    space_separated = received_msg.split()
     
+    ax = space_separated[0][2:] # ax
+    ay = space_separated[1] # ay
+    az = space_separated[2] # az
+
+    gx = space_separated[3] # gx
+    gy = space_separated[4] # gy
+    gz = space_separated[5][:-1] # gz
+
+    classify_idle(float(gyro[0]), float(gyro[1]), float(gyro[2]), float(gx), float(gy), float(gz))
+    
+    accel[0] = ax
+    accel[1] = ay
+    accel[2] = az
+
+    gyro[0] = gx
+    gyro[1] = gy
+    gyro[2] = gz
+    # print("ax, ay, az, gx, gy, gz", accel[0], accel[1], accel[2], gyro[0], gyro[1], gyro[2])
+
 # 1. create a client instance.
 client = mqtt.Client()
 # add additional client options (security, certifications, etc.)
@@ -37,6 +81,9 @@ client.loop_start()
 # client.loop_forever()
 
 while True: # perhaps add a stopping condition using some break or something
+    if (ACTIVE):
+        time.sleep(ACTIVE_TIME)
+        ACTIVE = False
     pass # do your non-blocked other stuff here, like receive IMU data or something.
 # use subscribe() to subscribe to a topic and receive messages.
 # use publish() to publish messages to the broker.
