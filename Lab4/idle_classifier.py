@@ -9,19 +9,14 @@ import time
 # paramater for if sum of gyroscope value's differences with respect to 
 # prev value is larger than this, then considered NOT idle
 GYRO_ACTIVE_DIFF = 50 
-# how much time to rest until check idle again in ms
-ACTIVE_TIME = 100
-ACTIVE = True
 
 accel = [0, 0, 0]
 gyro = [0, 0, 0]
 
 def classify_idle(old_gx, old_gy, old_gz, new_gx, new_gy, new_gz):
-    global ACTIVE
 
     # if difference in gyroscope values greater than GYRO_ACTIVE_DIFF then print active
-    if (((abs(old_gx - new_gx) + abs(old_gy - new_gy) + abs(old_gz - new_gz))) > GYRO_ACTIVE_DIFF) or ACTIVE:
-        ACTIVE = True
+    if (((abs(old_gx - new_gx) + abs(old_gy - new_gy) + abs(old_gz - new_gz))) > GYRO_ACTIVE_DIFF):
         print("Status: ACTIVE")
     else:
         print("Status: IDLE")
@@ -81,9 +76,6 @@ client.loop_start()
 # client.loop_forever()
 
 while True: # perhaps add a stopping condition using some break or something
-    if (ACTIVE):
-        time.sleep(ACTIVE_TIME)
-        ACTIVE = False
     pass # do your non-blocked other stuff here, like receive IMU data or something.
 # use subscribe() to subscribe to a topic and receive messages.
 # use publish() to publish messages to the broker.
