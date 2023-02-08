@@ -12,6 +12,8 @@ import string
 # INCREMENT SCORE PRINT ABOVE OR BELOW BOARD GOOD MESSAGE
 # TODO: also probably print some line that indicates where you have to click the button maybe <--- arrow to the
 # right of the correct line
+# TODO: also maybe if they press the value correctly, the board updates instantly like off-clock and replaces
+# with a '-' and then board regular update will turn it back
 
 # TODO: make it so that buttons dont spawn every round and maybe its like random # --> spawn but
 # the spawn chance is like a function of game difficulty
