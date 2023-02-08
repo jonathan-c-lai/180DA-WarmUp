@@ -1,6 +1,4 @@
-# default size of grid row=8 col=15 pretty good
-ROWS = 6
-COLS = 10
+from Settings import ROWS, COLS
 
 # how many blank lines between each grid print
 FILLER = 7
@@ -22,6 +20,9 @@ class Grid:
                 for col in range(self.num_cols):
                     self.grid[row][col] = str(col)
 
+    # resets the grid to all . -- do this before updating new points
+    def reset_grid(self):
+        self.grid = [ ['.']*self.num_cols for i in range(self.num_rows)]
 
     def get_grid_point(self, row, col):
         return self.grid[row][col]
