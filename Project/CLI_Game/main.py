@@ -27,4 +27,5 @@ while (True):
 
     # print grid
     my_grid.print_grid()
+    
     time.sleep(DELAY_PER_FRAME)
